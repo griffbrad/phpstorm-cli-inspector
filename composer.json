@@ -5,6 +5,7 @@
         "bin/phpstorm-inspect"
     ],
     "require": {
-        "php": ">=5.3.0"
+        "php": ">=5.3.0",
+        "griffbrad/phpstorm-cli-inspector": ">=1.0"
     }
 }

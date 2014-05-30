@@ -31,7 +31,10 @@ With phpstorm-inspect, this command becomes just:
 `phpstorm-inspect /delta/processthebasics-system/vendor/deltasystems/dewdrop/Dewdrop/Db/Dbdeploy/`
 
 And the errors are displayed immediately in your terminal, grouped by the name of 
-file they were found in.
+file they were found in.  The path used in the phpstorm-inspect command can be any
+sub-directory inside your PHPStorm project's files.  You don't have to manually
+point it at your inspection profile, .idea folder, etc.  And the XML files are
+cleaned up for you automatically when the command completes.
      
 Here's some example output:
 
@@ -54,7 +57,8 @@ Installing phpstorm-inspect
 
 You install phpstorm-inspect with Composer:
 
-`sudo composer require 'griffbrad/phpstorm-cli-inspector:>=1.0'`
+`composer global require 'griffbrad/phpstorm-cli-inspector:>=1.0'`
+`sudo ln -s ~/.composer/vendor/bin/phpstorm-inspect /usr/local/bin/phpstorm-inspect`
 
 Note that the above command assumes you've installed Composer globally as
 described here:
