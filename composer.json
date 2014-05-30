@@ -1,9 +1,10 @@
 {
     "name": "griffbrad/phpstorm-cli-inspector",
+    "version": "1.0",
     "bin": [
         "bin/phpstorm-inspect"
     ],
     "require": {
-        "php": ">=5.3.0",
+        "php": ">=5.3.0"
     }
 }
