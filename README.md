@@ -54,7 +54,13 @@ Installing phpstorm-inspect
 
 You install phpstorm-inspect with Composer:
 
-`composer global install griffbrad/phpstorm-cli-inspector`
+`sudo composer require 'griffbrad/phpstorm-cli-inspector:>=1.0'`
+
+Note that the above command assumes you've installed Composer globally as
+described here:
+
+<https://getcomposer.org/doc/00-intro.md#globally>
+
 
 FAQ
 ---
