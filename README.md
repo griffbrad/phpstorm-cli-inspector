@@ -22,13 +22,13 @@ How does phpstorm-cli-inspector help?
 To use PHPStorm's inspect.sh on a sub-directory of your project, you'd typically
 need to run this command:
 
-`/Applications/PhpStorm.app/bin/inspect.sh /delta/processthebasics-system/ /delta/processthebasics-system/.idea/inspectionProfiles/Project_Default.xml /tmp/output -d /delta/processthebasics-system/vendor/deltasystems/dewdrop/Dewdrop/Db/Dbdeploy/`
+`/Applications/PhpStorm.app/bin/inspect.sh /delta/my-example-project/ /delta/my-example-project/.idea/inspectionProfiles/Project_Default.xml /tmp/output -d /delta/my-example-project/vendor/deltasystems/dewdrop/Dewdrop/Db/Dbdeploy/`
 
 After running the inspections, you'd look through the XML files to see the results.
 
 With phpstorm-inspect, this command becomes just:
 
-`phpstorm-inspect /delta/processthebasics-system/vendor/deltasystems/dewdrop/Dewdrop/Db/Dbdeploy/`
+`phpstorm-inspect /delta/my-example-project/vendor/deltasystems/dewdrop/Dewdrop/Db/Dbdeploy/`
 
 And the errors are displayed immediately in your terminal, grouped by the name of 
 file they were found in.  The path used in the phpstorm-inspect command can be any
@@ -57,8 +57,10 @@ Installing phpstorm-inspect
 
 You install phpstorm-inspect with Composer:
 
-`composer global require 'griffbrad/phpstorm-cli-inspector:>=1.0'`
-`sudo ln -s ~/.composer/vendor/bin/phpstorm-inspect /usr/local/bin/phpstorm-inspect`
+<pre>
+composer global require 'griffbrad/phpstorm-cli-inspector:>=1.0'
+sudo ln -s ~/.composer/vendor/bin/phpstorm-inspect /usr/local/bin/phpstorm-inspect
+</pre>
 
 Note that the above command assumes you've installed Composer globally as
 described here:
