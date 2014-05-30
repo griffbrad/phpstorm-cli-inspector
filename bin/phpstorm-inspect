@@ -1,0 +1,185 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * We look for inspect.sh in the standard Mac OS X location.  If it isn't
+ * available in that location, the user can add a config file called
+ * ".phpstorm-inspect.ini" to their home folder that defines a custom
+ * "inspectPath" location.
+ */
+$configPath  = '~/.phpstorm-inspect.ini';
+$inspectPath = '/Applications/PhpStorm.app/bin/inspect.sh';
+
+// Exclude problems matching these patterns from the output.  Can add
+// custom exclude patterns in your config.  Should e PCRE expressions.
+$excludePatterns = array(
+    '/^Typo:/',
+    '/^Multiple definitions/',
+    '/^Other declaration of/'
+);
+
+if (file_exists($configPath) && is_readable($configPath)) {
+    $configData = parse_ini_file($configPath);
+
+    if (isset($configData['inspectPath'])) {
+        $inspectPath = $configData['inspectPath'];
+    }
+
+    if (isset($configData['excludePatterns'])) {
+        $excludePatterns = $configData['excludePatterns'];
+
+        if (!is_array($excludePatterns)) {
+            $excludePatterns = array($excludePatterns);
+        }
+    }
+}
+
+if (!file_exists($inspectPath)) {
+    trigger_error("Could not find PHPStorm's inspect.sh executable", E_USER_ERROR);
+}
+
+if (!is_executable($inspectPath)) {
+    trigger_error("{$inspectPath} is not executable", E_USER_ERROR);
+}
+
+/**
+ * Check path argument supplied by user.  We'll recursively climb up the
+ * file hierarchy from this path, looking for the project's .idea folder.
+ */
+if (!isset($_SERVER['argv'][1])) {
+    trigger_error(
+        'You must specify the sub directory of your PHPStorm project you want to inspect as the first argument',
+        E_USER_ERROR
+    );
+}
+
+$codePath = realpath($_SERVER['argv'][1]);
+
+if (!file_exists($codePath) || !is_dir($codePath)) {
+    trigger_error(
+        "Could not locate code path at {$_SERVER['argv'][1]}",
+        E_USER_ERROR
+    );
+}
+
+$ideaPath     = null;
+$codeSegments = explode(DIRECTORY_SEPARATOR, $codePath);
+
+while (count($codeSegments)) {
+    $currentPath = implode(DIRECTORY_SEPARATOR, $codeSegments);
+
+    if (file_exists($currentPath . '/.idea')) {
+        $ideaPath = $currentPath;
+    }
+
+    array_pop($codeSegments);
+}
+
+if (null === $ideaPath) {
+    trigger_error(
+        "Could not locate .idea folder in path '{$codePath}'.  Inspector can only run in PHPStorm project.",
+        E_USER_ERROR
+    );
+}
+
+/**
+ * Create temporary output folder.
+ */
+
+// WARNING: Note that I'm surpressing the typical PHP timezone warning.
+$tmpOutputPath = '/tmp/phpstorm-inspect_' . @date('YmdGis');
+
+/**
+ * Actually run the inspections!
+ */
+$cmd = sprintf(
+    '%s %s %s %s -d %s',
+    $inspectPath,
+    escapeshellarg($ideaPath),
+    escapeshellarg($ideaPath . '/.idea/inspectionProfiles/Project_Default.xml'),
+    escapeshellarg($tmpOutputPath),
+    escapeshellarg($codePath)
+);
+
+passthru($cmd);
+
+/**
+ * Display output from inspections.
+ */
+$xmlOutputFiles = glob($tmpOutputPath . '/*.xml');
+$problemsByFile = array();
+
+foreach ($xmlOutputFiles as $file) {
+    $xml = simplexml_load_file($file);
+
+    foreach ($xml->problem as $problem) {
+        $problemFile = str_replace('file://$PROJECT_DIR$/', '', $problem->file);
+
+        if (!isset($problemsByFile[$problemFile])) {
+            $problemsByFile[$problemFile] = array();
+        }
+
+        $excluded = false;
+
+        foreach ($excludePatterns as $pattern) {
+            if (preg_match($pattern, (string) $problem->description)) {
+                $excluded = true;
+                break;
+            }
+        }
+
+        if (!$excluded) {
+            $problemsByFile[$problemFile][] = array(
+                'line'        => (int) $problem->line,
+                'description' => (string) $problem->description
+            );
+        }
+    }
+}
+
+ksort($problemsByFile);
+
+foreach ($problemsByFile as $file => $problems) {
+    // Might have zero problems if all were excluded.  Skip file, if so.
+    if (!count($problems)) {
+        continue;
+    }
+
+    printf(
+        "%s\n%s\n\n",
+        $file,
+        str_repeat('=', strlen($file))
+    );
+
+    usort(
+        $problems,
+        function ($a, $b) {
+            if ($a['line'] === $b['line']) {
+                return 0;
+            }
+
+            return ($a['line'] > $b['line']) ? 1 : -1;
+        }
+    );
+
+    foreach ($problems as $problem) {
+        printf(
+            "* Line %d: %s\n",
+            $problem['line'],
+            $problem['description']
+        );
+    }
+
+    echo PHP_EOL;
+}
+
+
+/**
+ * Delete temporary output folder.
+ */
+passthru(
+    sprintf(
+        'rm -rf %s',
+        escapeshellarg($tmpOutputPath)
+    )
+);
